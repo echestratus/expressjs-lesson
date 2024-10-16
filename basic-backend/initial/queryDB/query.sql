@@ -11,3 +11,5 @@ CREATE TABLE products(
 INSERT INTO products(name, price, stock) VALUES('Red T-Shirt', 200000, 12);
 
 ALTER TABLE products ALTER COLUMN description SET NOT NULL
+
+SELECT * FROM products WHERE name ILIKE '%old%' ORDER BY name ASC LIMIT 2 OFFSET 0;

@@ -1,7 +1,11 @@
 const pool = require('../configs/db');
 
-const selectAllProducts = () => {
-    return pool.query('SELECT * FROM products');
+const selectAllProducts = (limit, offset, sortBy, sort, search) => {
+    if (search) {
+        return pool.query(`SELECT * FROM products WHERE name ILIKE '%${search}%' ORDER BY ${sortBy} ${sort} LIMIT $1 OFFSET $2`, [limit, offset]);
+    } else {
+        return pool.query(`SELECT * FROM products ORDER BY ${sortBy} ${sort} LIMIT $1 OFFSET $2`, [limit, offset]);
+    }
 }
 
 const postProduct = ({name, price, stock, description}) => {
@@ -20,11 +24,16 @@ const deleteProduct = (id) => {
     return pool.query("DELETE FROM products WHERE id=$1", [id]);
 }
 
+const totalProducts = () => {
+    return pool.query("SELECT COUNT(*) FROM products");
+}
+
 module.exports = {
     selectAllProducts,
     postProduct,
     selectProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    totalProducts
 }
 
