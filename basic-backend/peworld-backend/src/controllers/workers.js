@@ -4,6 +4,8 @@ const {createWorker, selectAllWorkers, selectWorkerById, updateWorker, totalWork
 const {standardizeResponse} = require('../helpers/common');
 const {v4: uuidv4} = require('uuid');
 const bcrypt = require('bcrypt');
+const { selectSkillsByWorkerId } = require('../models/skills');
+const { selectProfilePictureByWorkerId } = require('../models/profilePictures');
 
 const registerWorker = async (req, res, next) => {
     try {
@@ -62,6 +64,9 @@ const getAllWorkers = async (req, res, next) => {
         const totalData = parseInt((await totalWorkers()).rows[0].count);
         const totalPage = Math.ceil(totalData / limit);
         const workers = (await selectAllWorkers(orderBy, order, limit, offset, search)).rows;
+        for (const index in workers) {
+            workers[index].skills = (await selectSkillsByWorkerId(workers[index].id)).rows;
+        }
         const pagination = {
             orderBy,
             order,
@@ -82,6 +87,7 @@ const getAllWorkers = async (req, res, next) => {
 const getMyProfile = async (req, res, next) => {
     try {
         const {rows:[myProfile]} = await selectWorkerById(req.decoded.data.id);
+        myProfile.skills = (await selectSkillsByWorkerId(myProfile.id)).rows;
         const created_at = new Date(myProfile.created_at);
         const updated_at = new Date(myProfile.updated_at);
         myProfile.created_at = created_at.getDate() + '-' + (created_at.getMonth() + 1) + '-' + created_at.getFullYear() + ' ' + created_at.getHours() + ':' + created_at.getMinutes() + ':' + created_at.getSeconds();
@@ -96,6 +102,7 @@ const getWorkerProfile = async (req, res, next) => {
     try {
         const id = req.params.id;
         const {rows:[worker]} = await selectWorkerById(id);
+        worker.skills = (await selectSkillsByWorkerId(worker.id)).rows;
         if (!worker) {
             return next(createError(400, "Worker Not Found"));
         }
@@ -130,10 +137,34 @@ const updateWorkerProfile = async (req, res, next) => {
     }
 }
 
+const updateProfilePicture = async (req, res, next) => {
+    try {
+        //Delete uploaded file
+        fs.unlink(req.file.path, (err) => {
+            if (err) {
+                return next(createHttpError(400, err.message));
+            } else {
+                console.log('File deleted successfully!');
+            }
+        });
+
+        const worker_id = req.decoded.data.id;
+        const profilePicture = await selectProfilePictureByWorkerId(worker_id);
+        
+        const data = {
+            file_url: req.cloudinaryAsset
+        }
+        standardizeResponse(res, "success", 201, "File uploaded successfully", data);
+    } catch (err) {
+        next(createHttpError(400, err.message));
+    }
+}
+
 module.exports = {
     registerWorker,
     getAllWorkers,
     getMyProfile,
     getWorkerProfile,
-    updateWorkerProfile
+    updateWorkerProfile,
+    updateProfilePicture
 }

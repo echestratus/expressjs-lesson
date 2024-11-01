@@ -5,9 +5,10 @@ const {protected} = require('../middlewares/auth');
 
 route.post("/", registerWorker);
 route.get("/", protected, getAllWorkers);
-route.get("/myprofile", protected, getMyProfile);
+route.get("/profile", protected, getMyProfile);
 route.get("/:id", protected, getWorkerProfile);
-route.put("/myprofile", protected, updateWorkerProfile);
+route.put("/profile", protected, updateWorkerProfile);
+route.put("/profile/profile-picture", protected, );
 
 module.exports = {
     route
