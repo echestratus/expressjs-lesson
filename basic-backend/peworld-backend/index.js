@@ -24,7 +24,7 @@ app.use('/upload', routeUpload);
 app.use('/file', express.static(path.join(__dirname, '/upload')));
 
 app.use((err, req, res, next) => {
-    standardizeResponse(res, "failed", err.status, err.message, "No data due to error(s)");
+    standardizeResponse(res, "failed", err.status, err.message, err.details);
 });
 
 app.listen(process.env.API_PORT, () => {
