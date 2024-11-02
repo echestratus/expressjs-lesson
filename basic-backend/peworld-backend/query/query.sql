@@ -24,12 +24,36 @@ CREATE TABLE skills(
     id VARCHAR(128) PRIMARY KEY,
     name VARCHAR(64),
     worker_id VARCHAR(128),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY(worker_id) REFERENCES workers(id)
 );
 
 CREATE TABLE profile_pictures(
     id VARCHAR(128) PRIMARY KEY,
-    name VARCHAR(64) NOT NULL,
+    file_url TEXT NOT NULL,
     worker_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY(worker_id) REFERENCES workers(id)
+);
+
+CREATE TABLE work_experiences(
+    id VARCHAR(128) PRIMARY KEY,
+    position VARCHAR(128) NOT NULL,
+    company VARCHAR(64) NOT NULL,
+    start_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    worker_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY(worker_id) REFERENCES workers(id)
+);
+CREATE TABLE company_logo(
+    id VARCHAR(128) PRIMARY KEY,
+    file_url TEXT NOT NULL,
+    experience_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY(experience_id) REFERENCES work_experiences(id)
 );

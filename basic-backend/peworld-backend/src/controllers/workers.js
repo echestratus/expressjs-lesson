@@ -1,13 +1,14 @@
 const createHttpError = require('http-errors');
 const {createUser, selectByEmail} = require('../models/users');
 const {createWorker, selectAllWorkers, selectWorkerById, updateWorker, totalWorkers} = require('../models/workers');
-const {standardizeResponse} = require('../helpers/common');
+const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
 const {v4: uuidv4} = require('uuid');
 const bcrypt = require('bcrypt');
 const { selectSkillsByWorkerId } = require('../models/skills');
 const { selectProfilePictureByWorkerId, insertProfilePicture, updateProfilePicture } = require('../models/profilePictures');
 const { deleteFileInCloudinary } = require('../helpers/cloudinary');
-const fs = require('fs');
+const { selectExperiencesByWorkerId } = require('../models/experiences');
+const { selectCompanyLogoByWorkExperienceId } = require('../models/experienceCompanyLogo');
 
 const registerWorker = async (req, res, next) => {
     try {
@@ -115,6 +116,10 @@ const getMyProfile = async (req, res, next) => {
         const {rows:[myProfile]} = await selectWorkerById(req.decoded.data.id);
         myProfile.profile_picture = (await selectProfilePictureByWorkerId(myProfile.id)).rows[0] || null;
         myProfile.skills = (await selectSkillsByWorkerId(myProfile.id)).rows;
+        myProfile.work_experiences = (await selectExperiencesByWorkerId(myProfile.id)).rows;
+        for (const index in myProfile.work_experiences) {
+            myProfile.work_experiences[index].company_logo = (await selectCompanyLogoByWorkExperienceId(myProfile.work_experiences[index].id)).rows[0] || null;
+        }
         const created_at = new Date(myProfile.created_at);
         const updated_at = new Date(myProfile.updated_at);
         myProfile.created_at = created_at.getDate() + '-' + (created_at.getMonth() + 1) + '-' + created_at.getFullYear() + ' ' + created_at.getHours() + ':' + created_at.getMinutes() + ':' + created_at.getSeconds();
@@ -131,6 +136,10 @@ const getWorkerProfile = async (req, res, next) => {
         const {rows:[worker]} = await selectWorkerById(id);
         worker.profile_picture = (await selectProfilePictureByWorkerId(worker.id)).rows[0] || null;
         worker.skills = (await selectSkillsByWorkerId(worker.id)).rows;
+        worker.work_experiences = (await selectExperiencesByWorkerId(worker.id)).rows;
+        for (const index in worker.work_experiences) {
+            worker.work_experiences[index].company_logo = (await selectCompanyLogoByWorkExperienceId(worker.work_experiences[index].id)).rows[0] || null;
+        }
         if (!worker) {
             return next(createHttpError(400, "Worker Not Found"));
         }
@@ -165,16 +174,10 @@ const updateWorkerProfile = async (req, res, next) => {
     }
 }
 
-const updateWorkerProfilePicture = async (req, res, next) => {
+const updateOrAddWorkerProfilePicture = async (req, res, next) => {
     try {
         //Delete uploaded file
-        fs.unlink(req.file.path, (err) => {
-            if (err) {
-                return next(createHttpError(400, err.message));
-            } else {
-                console.log('File deleted successfully!');
-            }
-        });
+        deleteLocalFile(req.file.path, next);
 
         const worker_id = req.decoded.data.id;
         const {rows:[profilePicture]} = await selectProfilePictureByWorkerId(worker_id);
@@ -212,5 +215,5 @@ module.exports = {
     getMyProfile,
     getWorkerProfile,
     updateWorkerProfile,
-    updateWorkerProfilePicture
+    updateOrAddWorkerProfilePicture
 }

@@ -5,6 +5,7 @@ const {route: routeWorkers} = require('./src/routes/workers');
 const {route: routeUsers} = require('./src/routes/users');
 const {route: routeSkills} = require('./src/routes/skills');
 const {route: routeUpload} = require('./src/routes/upload');
+const {route: routeExperiences} = require('./src/routes/experiences');
 const morgan = require('morgan');
 const cors = require('cors');
 const { standardizeResponse } = require('./src/helpers/common');
@@ -20,6 +21,7 @@ app.use('/workers', routeWorkers);
 app.use('/users', routeUsers);
 app.use('/skills', routeSkills);
 app.use('/upload', routeUpload);
+app.use('/experiences', routeExperiences);
 
 app.use('/file', express.static(path.join(__dirname, '/upload')));
 
