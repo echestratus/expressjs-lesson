@@ -32,7 +32,7 @@ const registerWorker = async (req, res, next) => {
         if (!phoneRegex.test(phone)) {
             errorValidation.phone = "phone must contain at least 8 digits of number";
         }
-        if (!nameRegex.test(name) || !emailRegex.test(email) || !passwordRegex.test(password) || !phoneRegex.test(phone)) {
+        if (Object.keys(errorValidation).length > 0) {
             return next(createHttpError(406, "Validation Error", {details: errorValidation}));
         }
 

@@ -36,7 +36,7 @@ const getMySkills = async (req, res, next) => {
 
 const getWorkerSkills = async (req, res, next) => {
     try {
-        const worker_id = req.params;
+        const worker_id = req.params.id;
         const {rows:data} = await selectSkillsByWorkerId(worker_id);
         standardizeResponse(res, "success", 200, "Skills fetched successfully", data);
     } catch (err) {
