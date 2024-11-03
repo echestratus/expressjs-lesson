@@ -71,7 +71,6 @@ const updateOrAddPortfolioPicture = async (req, res, next) => {
         const portfolio_id = req.params.portfolio_id;
 
         const {rows:[portfolio]} = await selectPortfolioByIdAndWorkerId(portfolio_id, req.decoded.data.id);
-        console.log(portfolio);
         if (!portfolio) {
             deleteFileInCloudinary(req.cloudinaryAsset.public_id);
             return next(createHttpError(404, "Portfolio Not Found"));
