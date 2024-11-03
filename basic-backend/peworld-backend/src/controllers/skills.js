@@ -1,7 +1,7 @@
 const createHttpError = require('http-errors');
 const {standardizeResponse} = require('../helpers/common');
 const {v4: uuidv4} = require('uuid');
-const {findSkillPerWorker, insertSkill, selectSkillsByWorkerId} = require('../models/skills');
+const {findSkillPerWorker, insertSkill, selectSkillsByWorkerId, deleteSkillByNameAndWorkerId} = require('../models/skills');
 
 const addSkill = async (req, res, next) => {
     try {
@@ -44,8 +44,25 @@ const getWorkerSkills = async (req, res, next) => {
     }
 }
 
+const deleteWorkerSkill = async (req, res, next) => {
+    try {
+        const {skill_name} = req.body;
+        const worker_id = req.decoded.data.id;
+        const {rows:[skillFound]} = await findSkillPerWorker(skill_name, worker_id);
+        if (!skillFound) {
+            return next(createHttpError(404, "Skill Not Found"));
+        }
+        await deleteSkillByNameAndWorkerId(skill_name, worker_id);
+        standardizeResponse(res, "success", 200, "Skill deleted successfully", skillFound);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError(400, err.message));
+    }
+}
+
 module.exports = {
     addSkill,
     getMySkills,
-    getWorkerSkills
+    getWorkerSkills,
+    deleteWorkerSkill
 }
