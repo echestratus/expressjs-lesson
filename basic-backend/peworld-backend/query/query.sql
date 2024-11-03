@@ -49,11 +49,30 @@ CREATE TABLE work_experiences(
     updated_at TIMESTAMP,
     FOREIGN KEY(worker_id) REFERENCES workers(id)
 );
-CREATE TABLE company_logo(
+CREATE TABLE experience_company_logo(
     id VARCHAR(128) PRIMARY KEY,
     file_url TEXT NOT NULL,
     experience_id VARCHAR(128) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     FOREIGN KEY(experience_id) REFERENCES work_experiences(id)
+);
+
+CREATE TABLE portfolios(
+    id VARCHAR(128) PRIMARY KEY,
+    application_name VARCHAR(128) NOT NULL,
+    repo_link TEXT NOT NULL,
+    portfolio_type VARCHAR(64) NOT NULL,
+    worker_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY(worker_id) REFERENCES workers(id)
+);
+CREATE TABLE portfolio_picture(
+    id VARCHAR(128) PRIMARY KEY,
+    file_url TEXT NOT NULL,
+    portfolio_id VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY(portfolio_id) REFERENCES portfolios(id)
 );

@@ -4,6 +4,7 @@ const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
 const {insertExperience, selectExperiencesByWorkerId, selectExperienceByIdAndWorkerId} = require('../models/experiences');
 const {insertCompanyLogo, selectCompanyLogoByWorkExperienceId, updateCompanyLogo} = require('../models/experienceCompanyLogo');
 const { deleteFileInCloudinary } = require('../helpers/cloudinary');
+const { selectWorkerById } = require('../models/workers');
 
 const addWorkExperience = async (req, res, next) => {
     try {
@@ -31,8 +32,10 @@ const addWorkExperience = async (req, res, next) => {
 const getWorkExperiences = async (req, res, next) => {
     try {
         const {rows: data} = await selectExperiencesByWorkerId(req.decoded.data.id);
-        for (const index in data) {
-            data[index].company_logo = (await selectCompanyLogoByWorkExperienceId(data[index].id)).rows[0] || null;
+        if (data.length !== 0) {
+            for (const index in data) {
+                data[index].company_logo = (await selectCompanyLogoByWorkExperienceId(data[index].id)).rows[0] || null;
+            }
         }
         standardizeResponse(res, "success", 200, "Work experiences fetched successfully", data);
     } catch (err) {
@@ -44,12 +47,15 @@ const getWorkExperiences = async (req, res, next) => {
 const getWorkerWorkExperiences = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const {rows: data} = await selectExperiencesByWorkerId(id);
-        if (data.length === 0) {
-            return next(createHttpError(404, "Worker not found"));
+        const {rows:[worker]} = await selectWorkerById(id);
+        if (!worker) {
+            return next(createHttpError(404, "Worker Not Found"));
         }
-        for (const index in data) {
-            data[index].company_logo = (await selectCompanyLogoByWorkExperienceId(data[index].id)).rows[0] || null;
+        const {rows: data} = await selectExperiencesByWorkerId(id);
+        if (data.length !== 0) {
+            for (const index in data) {
+                data[index].company_logo = (await selectCompanyLogoByWorkExperienceId(data[index].id)).rows[0] || null;
+            }
         }
         standardizeResponse(res, "success", 200, "Work experiences fetched successfully", data);
     } catch (err) {
@@ -63,6 +69,7 @@ const updateOrAddCompanyLogo = async (req, res, next) => {
         deleteLocalFile(req.file.path, next);
         
         const experience_id = req.params.experience_id;
+        
         const {rows:[experience]} = await selectExperienceByIdAndWorkerId(experience_id, req.decoded.data.id);
         if (!experience) {
             deleteFileInCloudinary(req.cloudinaryAsset.public_id);

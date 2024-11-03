@@ -9,6 +9,8 @@ const { selectProfilePictureByWorkerId, insertProfilePicture, updateProfilePictu
 const { deleteFileInCloudinary } = require('../helpers/cloudinary');
 const { selectExperiencesByWorkerId } = require('../models/experiences');
 const { selectCompanyLogoByWorkExperienceId } = require('../models/experienceCompanyLogo');
+const { selectPortfoliosByWorkerId } = require('../models/portfolios');
+const { selectPortfolioPictureByPortfolioId } = require('../models/portfolioPicture');
 
 const registerWorker = async (req, res, next) => {
     try {
@@ -120,6 +122,10 @@ const getMyProfile = async (req, res, next) => {
         for (const index in myProfile.work_experiences) {
             myProfile.work_experiences[index].company_logo = (await selectCompanyLogoByWorkExperienceId(myProfile.work_experiences[index].id)).rows[0] || null;
         }
+        myProfile.portfolios = (await selectPortfoliosByWorkerId(myProfile.id)).rows;
+        for (const index in myProfile.portfolios) {
+            myProfile.portfolios[index].portfolio_picture = (await selectPortfolioPictureByPortfolioId(myProfile.portfolios[index].id)).rows[0] || null;
+        }
         const created_at = new Date(myProfile.created_at);
         const updated_at = new Date(myProfile.updated_at);
         myProfile.created_at = created_at.getDate() + '-' + (created_at.getMonth() + 1) + '-' + created_at.getFullYear() + ' ' + created_at.getHours() + ':' + created_at.getMinutes() + ':' + created_at.getSeconds();
@@ -139,6 +145,10 @@ const getWorkerProfile = async (req, res, next) => {
         worker.work_experiences = (await selectExperiencesByWorkerId(worker.id)).rows;
         for (const index in worker.work_experiences) {
             worker.work_experiences[index].company_logo = (await selectCompanyLogoByWorkExperienceId(worker.work_experiences[index].id)).rows[0] || null;
+        }
+        worker.portfolios = (await selectPortfoliosByWorkerId(worker.id)).rows;
+        for (const index in worker.portfolios) {
+            worker.portfolios[index].portfolio_picture = (await selectPortfolioPictureByPortfolioId(worker.portfolios[index].id)).rows[0] || null;
         }
         if (!worker) {
             return next(createHttpError(400, "Worker Not Found"));
@@ -182,7 +192,7 @@ const updateOrAddWorkerProfilePicture = async (req, res, next) => {
         const worker_id = req.decoded.data.id;
         const {rows:[profilePicture]} = await selectProfilePictureByWorkerId(worker_id);
         if (!profilePicture) {
-            //Post new profile picture there isn't any
+            //Post new profile picture if there isn't any
             const data = {
                 id: req.cloudinaryAsset.public_id,
                 file_url: req.cloudinaryAsset.url,

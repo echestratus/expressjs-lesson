@@ -6,6 +6,7 @@ const {route: routeUsers} = require('./src/routes/users');
 const {route: routeSkills} = require('./src/routes/skills');
 const {route: routeUpload} = require('./src/routes/upload');
 const {route: routeExperiences} = require('./src/routes/experiences');
+const {route: routePortfolios} = require('./src/routes/portfolios')
 const morgan = require('morgan');
 const cors = require('cors');
 const { standardizeResponse } = require('./src/helpers/common');
@@ -22,6 +23,7 @@ app.use('/users', routeUsers);
 app.use('/skills', routeSkills);
 app.use('/upload', routeUpload);
 app.use('/experiences', routeExperiences);
+app.use('/portfolios', routePortfolios);
 
 app.use('/file', express.static(path.join(__dirname, '/upload')));
 
