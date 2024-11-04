@@ -1,8 +1,8 @@
 const createHttpError = require('http-errors');
 const {v4: uuidv4} = require('uuid');
 const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
-const {insertExperience, selectExperiencesByWorkerId, selectExperienceByIdAndWorkerId, updateExperience} = require('../models/experiences');
-const {insertCompanyLogo, selectCompanyLogoByWorkExperienceId, updateCompanyLogo} = require('../models/experienceCompanyLogo');
+const {insertExperience, selectExperiencesByWorkerId, selectExperienceByIdAndWorkerId, updateExperience, deleteExperience} = require('../models/experiences');
+const {insertCompanyLogo, selectCompanyLogoByWorkExperienceId, updateCompanyLogo, deleteCompanyLogo} = require('../models/experienceCompanyLogo');
 const { deleteFileInCloudinary } = require('../helpers/cloudinary');
 const { selectWorkerById } = require('../models/workers');
 
@@ -133,10 +133,59 @@ const updateOrAddCompanyLogo = async (req, res, next) => {
     }
 }
 
+const deleteExperienceCompanyLogo = async (req, res, next) => {
+    try {
+        const experience_id = req.params.experience_id;
+        const worker_id = req.decoded.data.id;
+        const {rows:[experience]} = await selectExperienceByIdAndWorkerId(experience_id, worker_id);
+        if (!experience) {
+            return next(createHttpError(404, "Experience Not Found"));
+        }
+        
+        const {rows:[companyLogo]} = await selectCompanyLogoByWorkExperienceId(experience_id);
+        if (!companyLogo) {
+            return next(createHttpError(404, "Company logo Not Found"));
+        }
+    
+        deleteFileInCloudinary(companyLogo.id);
+    
+        await deleteCompanyLogo(experience_id);
+    
+        req.companyLogo = companyLogo;
+        
+        next();
+    } catch (err) {
+        console.log(err);
+        next(createHttpError.InternalServerError(err.message));
+    }
+}
+
+const deleteWorkerExperience = async (req, res, next) => {
+    try {
+        const worker_id = req.decoded.data.id;
+        const id = req.params.experience_id;
+        
+        const {rows:[experience]} = await selectExperienceByIdAndWorkerId(id, worker_id);
+        if (!experience) {
+            return next(createHttpError(404, "Experience Not Found"));
+        }
+
+        experience.company_logo = req.companyLogo;
+
+        await deleteExperience(id, worker_id);
+        standardizeResponse(res, "success", 200, "Experience deleted successfully", experience);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError.InternalServerError(err.message));
+    }
+}
+
 module.exports = {
     addWorkExperience,
     getWorkExperiences,
     getWorkerWorkExperiences,
     updateOrAddCompanyLogo,
-    updateWorkExperience
+    updateWorkExperience,
+    deleteExperienceCompanyLogo,
+    deleteWorkerExperience
 }

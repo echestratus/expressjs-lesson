@@ -12,8 +12,13 @@ const updateCompanyLogo = ({id, file_url, experience_id}) => {
     return pool.query("UPDATE experience_company_logo SET id=$1, file_url=$2, updated_at=CURRENT_TIMESTAMP WHERE experience_id=$3", [id, file_url, experience_id]);
 }
 
+const deleteCompanyLogo = (experience_id) => {
+    return pool.query("DELETE FROM experience_company_logo WHERE experience_id=$1", [experience_id]);
+}
+
 module.exports = {
     selectCompanyLogoByWorkExperienceId,
     insertCompanyLogo,
-    updateCompanyLogo
+    updateCompanyLogo,
+    deleteCompanyLogo
 }
