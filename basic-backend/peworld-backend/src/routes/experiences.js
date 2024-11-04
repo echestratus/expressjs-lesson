@@ -11,7 +11,8 @@ route.get('/', protected, getWorkExperiences);
 route.get('/:id', protected, getWorkerWorkExperiences);
 route.put('/:experience_id', protected, updateWorkExperience);
 route.put('/company-logo/:experience_id', protected, upload.single('image'), uploadToCloudinary, updateOrAddCompanyLogo);
-route.delete('/:experience_id', protected, deleteExperienceCompanyLogo, deleteWorkerExperience);
+route.delete('/:experience_id', protected, deleteWorkerExperience);
+route.delete('/company-logo/:experience_id', protected, deleteExperienceCompanyLogo);
 
 module.exports = {
     route

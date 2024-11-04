@@ -150,10 +150,8 @@ const deleteExperienceCompanyLogo = async (req, res, next) => {
         deleteFileInCloudinary(companyLogo.id);
     
         await deleteCompanyLogo(experience_id);
-    
-        req.companyLogo = companyLogo;
         
-        next();
+        standardizeResponse(res, "success", 200, "Company logo deleted successfully", companyLogo);
     } catch (err) {
         console.log(err);
         next(createHttpError.InternalServerError(err.message));
@@ -170,8 +168,15 @@ const deleteWorkerExperience = async (req, res, next) => {
             return next(createHttpError(404, "Experience Not Found"));
         }
 
-        experience.company_logo = req.companyLogo;
+        //Company logo deletion process
+        const {rows:[company_logo]} = await selectCompanyLogoByWorkExperienceId(experience.id);
+        experience.company_logo = company_logo;
+        if (company_logo) {
+            deleteFileInCloudinary(company_logo.id);
+            await deleteCompanyLogo(experience.id);
+        }
 
+        //Experience deletion process
         await deleteExperience(id, worker_id);
         standardizeResponse(res, "success", 200, "Experience deleted successfully", experience);
     } catch (err) {
