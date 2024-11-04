@@ -1,7 +1,7 @@
 const createHttpError = require('http-errors');
 const {v4: uuidv4} = require('uuid');
 const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
-const {insertExperience, selectExperiencesByWorkerId, selectExperienceByIdAndWorkerId} = require('../models/experiences');
+const {insertExperience, selectExperiencesByWorkerId, selectExperienceByIdAndWorkerId, updateExperience} = require('../models/experiences');
 const {insertCompanyLogo, selectCompanyLogoByWorkExperienceId, updateCompanyLogo} = require('../models/experienceCompanyLogo');
 const { deleteFileInCloudinary } = require('../helpers/cloudinary');
 const { selectWorkerById } = require('../models/workers');
@@ -63,6 +63,35 @@ const getWorkerWorkExperiences = async (req, res, next) => {
     }
 }
 
+const updateWorkExperience = async (req, res, next) => {
+    try {
+        const {position, company, start_date, description} = req.body;
+        const id = req.params.experience_id;
+        const worker_id = req.decoded.data.id;
+    
+        const {rows:[experience]} = await selectExperienceByIdAndWorkerId(id, worker_id);
+        if (!experience) {
+            return next(createHttpError(404, "Experience Not Found"));
+        }
+    
+        const data = {
+            position: position || experience.position,
+            company: company || experience.company,
+            start_date: start_date || experience.start_date,
+            description: description || experience.description,
+            id,
+            worker_id
+        }
+        
+        await updateExperience(data);
+    
+        standardizeResponse(res, "success", 201, "Experience updated successfully", data);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError(400, err.message));
+    }
+}
+
 const updateOrAddCompanyLogo = async (req, res, next) => {
     try {
         //Delete uploaded file
@@ -108,5 +137,6 @@ module.exports = {
     addWorkExperience,
     getWorkExperiences,
     getWorkerWorkExperiences,
-    updateOrAddCompanyLogo
+    updateOrAddCompanyLogo,
+    updateWorkExperience
 }
