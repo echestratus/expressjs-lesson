@@ -1,9 +1,9 @@
 const createHttpError = require("http-errors");
 const {v4:uuidv4} = require('uuid');
 const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
-const {insertPortfolio, selectPortfoliosByWorkerId, selectPortfolioByIdAndWorkerId} = require('../models/portfolios');
+const {insertPortfolio, selectPortfoliosByWorkerId, selectPortfolioByIdAndWorkerId, deletePortfolio} = require('../models/portfolios');
 const { selectWorkerById } = require("../models/workers");
-const {insertPortfolioPicture, selectPortfolioPictureByPortfolioId, updatePortfolioPicture} = require('../models/portfolioPicture');
+const {insertPortfolioPicture, selectPortfolioPictureByPortfolioId, updatePortfolioPicture, selectPortfolioPictureById, deletePortfolioPicture} = require('../models/portfolioPicture');
 const { deleteFileInCloudinary } = require("../helpers/cloudinary");
 
 const addPortfolio = async (req, res, next) => {
@@ -104,9 +104,61 @@ const updateOrAddPortfolioPicture = async (req, res, next) => {
     }
 }
 
+const removePortfolioPicture = async (req, res, next) => {
+    try {
+        const id = req.params.portfolio_picture_id;
+        const worker_id = req.decoded.data.id;
+    
+        const {rows:[portfolio_picture]} = await selectPortfolioPictureById(id);
+        if (!portfolio_picture) {
+            return next(createHttpError(404, "Portfolio picture Not Found"));
+        }
+        const {rows:[portfolio]} = await selectPortfolioByIdAndWorkerId(portfolio_picture.portfolio_id, worker_id);
+        if (!portfolio) {
+            return next(createHttpError(404, "Portfolio Not Found"));
+        }
+    
+        await deleteFileInCloudinary(id);
+        await deletePortfolioPicture(id);
+    
+        standardizeResponse(res, "success", 200, "Portfolio picture deleted successfully", portfolio_picture);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError.InternalServerError(err.message));
+    }
+}
+
+const removePortfolio = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const worker_id = req.decoded.data.id;
+    
+        const {rows:[portfolio]} = await selectPortfolioByIdAndWorkerId(id, worker_id);
+        if (!portfolio) {
+            return next(createHttpError(404, "Portfolio Not Found"));
+        }
+    
+        const {rows:[portfolio_picture]} = await selectPortfolioPictureByPortfolioId(id);
+        portfolio.portfolio_picture = portfolio_picture || null;
+        if (portfolio_picture) {
+            await deleteFileInCloudinary(portfolio_picture.id);
+            await deletePortfolioPicture(portfolio_picture.id);
+        }
+    
+        await deletePortfolio(id, worker_id);
+    
+        standardizeResponse(res, "success", 200, "Portfolio deleted successfully", portfolio);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError.InternalServerError(err.message));
+    }
+}
+
 module.exports = {
     addPortfolio,
     getPortfolios,
     getWorkerPortfolios,
-    updateOrAddPortfolioPicture
+    updateOrAddPortfolioPicture,
+    removePortfolioPicture,
+    removePortfolio
 }
