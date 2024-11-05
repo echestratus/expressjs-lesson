@@ -1,7 +1,7 @@
 const createHttpError = require("http-errors");
 const {v4:uuidv4} = require('uuid');
 const {standardizeResponse, deleteLocalFile} = require('../helpers/common');
-const {insertPortfolio, selectPortfoliosByWorkerId, selectPortfolioByIdAndWorkerId, deletePortfolio} = require('../models/portfolios');
+const {insertPortfolio, selectPortfoliosByWorkerId, selectPortfolioByIdAndWorkerId, deletePortfolio, updatePortfolio} = require('../models/portfolios');
 const { selectWorkerById } = require("../models/workers");
 const {insertPortfolioPicture, selectPortfolioPictureByPortfolioId, updatePortfolioPicture, selectPortfolioPictureById, deletePortfolioPicture} = require('../models/portfolioPicture');
 const { deleteFileInCloudinary } = require("../helpers/cloudinary");
@@ -60,6 +60,36 @@ const getWorkerPortfolios = async (req, res, next) => {
     } catch (err) {
         console.log(err);
         next(createHttpError(400, err.message));
+    }
+}
+
+const updateWorkerPortfolio = async (req, res, next) => {
+    try {
+        const worker_id = req.decoded.data.id;
+        const id = req.params.portfolio_id;
+        const {application_name, repo_link, portfolio_type} = req.body;
+
+        //Validate portfolio type
+        if (portfolio_type.toLowerCase() !== "Mobile Application".toLowerCase() && portfolio_type.toLowerCase() !== "Web Application".toLowerCase()) {
+            return next(createHttpError(406, "Portfolio type value could only either Mobile Application or Web Application"));
+        }
+
+        const {rows:[portfolio]} = await selectPortfolioByIdAndWorkerId(id, worker_id);
+        if (!portfolio) {
+            return next(createHttpError(404, "Portfolio Not Found"));
+        }
+        const data = {
+            application_name: application_name || portfolio.application_name,
+            repo_link: repo_link || portfolio.repo_link,
+            portfolio_type: portfolio_type || portfolio.portfolio_type,
+            id
+        }
+
+        await updatePortfolio(data);
+        standardizeResponse(res, "success", 200, "Portfolio updated successfully", data);
+    } catch (err) {
+        console.log(err);
+        next(createHttpError.InternalServerError(err.message));
     }
 }
 
@@ -130,7 +160,7 @@ const removePortfolioPicture = async (req, res, next) => {
 
 const removePortfolio = async (req, res, next) => {
     try {
-        const id = req.params.id;
+        const id = req.params.portfolio_id;
         const worker_id = req.decoded.data.id;
     
         const {rows:[portfolio]} = await selectPortfolioByIdAndWorkerId(id, worker_id);
@@ -159,6 +189,7 @@ module.exports = {
     getPortfolios,
     getWorkerPortfolios,
     updateOrAddPortfolioPicture,
+    updateWorkerPortfolio,
     removePortfolioPicture,
     removePortfolio
 }

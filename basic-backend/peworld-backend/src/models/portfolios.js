@@ -12,6 +12,10 @@ const selectPortfolioByIdAndWorkerId = (id, worker_id) => {
     return pool.query("SELECT * FROM portfolios WHERE id=$1 AND worker_id=$2", [id, worker_id]);
 }
 
+const updatePortfolio = ({application_name, repo_link, portfolio_type, id}) => {
+    return pool.query("UPDATE portfolios SET application_name=$1, repo_link=$2, portfolio_type=$3, updated_at=CURRENT_TIMESTAMP WHERE id=$4", [application_name, repo_link, portfolio_type, id]);
+}
+
 const deletePortfolio = (id, worker_id) => {
     return pool.query("DELETE FROM portfolios WHERE id=$1 AND worker_id=$2", [id, worker_id])
 }
@@ -20,5 +24,6 @@ module.exports = {
     insertPortfolio,
     selectPortfoliosByWorkerId,
     selectPortfolioByIdAndWorkerId,
-    deletePortfolio
+    deletePortfolio,
+    updatePortfolio
 }
